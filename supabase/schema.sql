@@ -111,10 +111,11 @@ $$;
 -- the replace-then-insert in one transaction, so two people hitting the same
 -- slot at the same moment can't both win.
 create or replace function public.book_appointment(
-  p_name  text,
-  p_phone text,
-  p_date  date,
-  p_slot  text
+  p_name      text,
+  p_phone     text,
+  p_date      date,
+  p_slot      text,
+  p_honeypot  text
 )
 returns jsonb
 language plpgsql
@@ -124,6 +125,10 @@ as $$
 declare
   v_replaced boolean;
 begin
+  if btrim(coalesce(p_honeypot, '')) <> '' then
+    return jsonb_build_object('ok', false, 'reason', 'spam');
+  end if;
+
   if btrim(coalesce(p_name, '')) = '' then
     return jsonb_build_object('ok', false, 'reason', 'name');
   end if;
@@ -170,8 +175,8 @@ $$;
 -- ----------------------------------------------------------------------------
 revoke all on function public.taken_slots()                            from public;
 revoke all on function public.booking_for_phone(text)                  from public;
-revoke all on function public.book_appointment(text, text, date, text) from public;
+revoke all on function public.book_appointment(text, text, date, text, text) from public;
 
 grant execute on function public.taken_slots()                            to anon, authenticated;
 grant execute on function public.booking_for_phone(text)                  to anon, authenticated;
-grant execute on function public.book_appointment(text, text, date, text) to anon, authenticated;
+grant execute on function public.book_appointment(text, text, date, text, text) to anon, authenticated;

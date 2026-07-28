@@ -27,11 +27,13 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState(undefined);
   const [time, setTime] = useState("");
+  const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [booked, setBooked] = useState(false);
   const [replaced, setReplaced] = useState(false);
   const [existingBooking, setExistingBooking] = useState(null);
+  const [lastSubmitAt, setLastSubmitAt] = useState(0);
 
   // Live hint: this number already has a booking that we're about to replace.
   // Only the server can answer that, so wait for the number to look complete
@@ -108,13 +110,29 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
       return;
     }
 
+    if (website.trim()) {
+      setError("Spam detected. Please refresh the page and try again.");
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastSubmitAt < 2000) {
+      setError("Please wait a few seconds before trying again.");
+      return;
+    }
+    setLastSubmitAt(now);
+
     setBusy(true);
-    const result = await onBook({ name, phone, date, time });
+    const result = await onBook({ name, phone, date, time, honeypot: website });
     setBusy(false);
 
     if (!result.ok) {
       if (result.reason === "network") {
         setError("Couldn't reach the clinic's booking system. Please try again.");
+        return;
+      }
+      if (result.reason === "spam") {
+        setError("Detected spam behavior. Please refresh the page and try again.");
         return;
       }
       setTime("");
@@ -130,6 +148,7 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
     setPhone("");
     setDate(undefined);
     setTime("");
+    setWebsite("");
     setExistingBooking(null);
   };
 
@@ -217,6 +236,19 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
                     it.
                   </p>
                 )}
+              </div>
+
+              <div className="sr-only">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  name="website"
+                  type="text"
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="Leave this field blank"
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">

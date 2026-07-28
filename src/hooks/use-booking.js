@@ -32,12 +32,13 @@ export function useBooking() {
    * @returns {Promise<{ok: true, replaced: boolean} | {ok: false, reason: string}>}
    */
   const book = useCallback(
-    async ({ name, phone, date, time }) => {
+    async ({ name, phone, date, time, honeypot = "" }) => {
       const { data, error } = await supabase.rpc("book_appointment", {
         p_name: name.trim(),
         p_phone: normalizePhone(phone),
         p_date: format(date, "yyyy-MM-dd"),
         p_slot: time,
+        p_honeypot: honeypot,
       });
 
       if (error) {
