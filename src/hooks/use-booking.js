@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { normalizePhone } from "@/lib/booking";
+import { sendBookingConfirmation } from "@/lib/sms";
 
 /**
  * Public side of the booking flow.
@@ -47,6 +48,16 @@ export function useBooking() {
       }
 
       await refresh();
+
+      if (data?.ok) {
+        await sendBookingConfirmation({
+          name,
+          phone: normalizePhone(phone),
+          date,
+          time,
+        });
+      }
+
       return data;
     },
     [refresh]

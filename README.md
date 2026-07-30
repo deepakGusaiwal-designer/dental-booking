@@ -94,9 +94,90 @@ src/
   components/ui/        # shadcn components
 ```
 
+## SMS confirmation setup
+
+To send a confirmation SMS after a successful appointment booking, add a Supabase Edge Function named `send-booking-confirmation`.
+
+### 1. Create the Edge Function
+Run:
+
+```bash
+supabase functions new send-booking-confirmation
+```
+
+### 2. Add the function code
+In the generated file, use your MSG91 account. The app is already wired to call the function with the booking details.
+
+```ts
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+
+const msg91AuthKey = Deno.env.get('MSG91_AUTH_KEY');
+const msg91SenderId = Deno.env.get('MSG91_SENDER_ID');
+const msg91Route = Deno.env.get('MSG91_ROUTE') || '4';
+const msg91Country = Deno.env.get('MSG91_COUNTRY') || '91';
+
+serve(async (req) => {
+  try {
+    const { name, phone, date, time } = await req.json();
+
+    if (!msg91AuthKey || !msg91SenderId) {
+      return new Response(JSON.stringify({ ok: false, reason: 'missing-config' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const digits = String(phone || '').replace(/\D/g, '');
+    const mobile = digits.startsWith('91')
+      ? digits
+      : digits.startsWith('0')
+        ? `91${digits.slice(1)}`
+        : `91${digits}`;
+
+    const message = `Hi ${name || 'there'}, your dental appointment is confirmed for ${date} at ${time}.`;
+    const url = new URL('https://control.msg91.com/api/sendhttp.php');
+    url.searchParams.set('authkey', msg91AuthKey);
+    url.searchParams.set('mob', mobile);
+    url.searchParams.set('message', message);
+    url.searchParams.set('sender', msg91SenderId);
+    url.searchParams.set('route', msg91Route);
+    url.searchParams.set('country', msg91Country);
+    url.searchParams.set('unicode', '1');
+
+    const response = await fetch(url.toString(), { method: 'GET' });
+    const text = await response.text();
+    const ok = response.ok && !text.toLowerCase().includes('error');
+
+    return new Response(JSON.stringify({ ok, raw: text }), {
+      status: ok ? 200 : 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ ok: false, error: String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+});
+```
+
+### 3. Set environment variables
+In the Supabase project dashboard, add these secrets:
+
+- `MSG91_AUTH_KEY`
+- `MSG91_SENDER_ID`
+- `MSG91_ROUTE` (optional, default `4`)
+- `MSG91_COUNTRY` (optional, default `91`)
+
+### 4. Deploy the function
+```bash
+supabase functions deploy send-booking-confirmation
+```
+
+### 5. Optional: trigger from database instead of the frontend
+If you want the SMS to be sent even when a booking is created from another source, you can also add a Postgres trigger or call the function from the database side. For now, the app triggers it after a successful client-side booking.
+
 ## Not included yet
-- **Confirmation email/SMS** to the patient. Would be a Supabase Edge Function on
-  insert, plus Resend (email) or MSG91/Twilio (SMS).
 - **Rate limiting** on `book_appointment`. Anyone with the public key can call it,
   so a determined person could spam bookings from many phone numbers. Adding a
   captcha (Supabase supports hCaptcha/Turnstile) is the usual fix.

@@ -158,9 +158,9 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
         {/* Left: dental image */}
         <div className="bg-teal-100/50 flex flex-col items-center justify-center p-8 gap-4">
           {/* <ToothArt /> */}
-          <p className="text-center text-sm text-teal-800 max-w-[240px]">
+          {/* <p className="text-center text-sm text-teal-800 max-w-[240px]">
             Gentle, on-time dental checkups. Pick a slot that works for you.
-          </p>
+          </p> */}
         </div>
 
         {/* Right: form */}
@@ -187,7 +187,7 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="name">
                   Name <span className="text-teal-600">*</span>
                 </Label>
@@ -203,7 +203,7 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="phone">
                   Mobile number <span className="text-teal-600">*</span>
                 </Label>
@@ -252,7 +252,7 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="date">
                     Date <span className="text-teal-600">*</span>
                   </Label>
@@ -289,7 +289,7 @@ export default function BookingForm({ takenSlots, onBook, onLookupPhone }) {
                   </Popover>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="time">
                     Time <span className="text-teal-600">*</span>
                   </Label>
